@@ -34,11 +34,6 @@ jobs:
   release:
     runs-on: ubuntu-20.04
     needs: prepare_release
-    strategy:
-      matrix:
-        DEVICE: [rockpro64]
-        EDITION: [kde-plasma,mate,minimal,xfce]
-        BRANCH: [unstable]
     steps:
       - 
         uses: styfle/cancel-workflow-action@0.9.0
@@ -110,11 +105,6 @@ jobs:
           sudo sed -i -e 's|2>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh
       -
         name: build
-        env:
-          DEVICE: ${{ matrix.DEVICE }}
-          EDITION: ${{ matrix.EDITION }}
-          BRANCH: ${{ matrix.BRANCH }}
-          VERSION: ${{ steps.time.outputs.time }}
         run: |
           sudo buildrootfs
           
