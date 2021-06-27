@@ -37,6 +37,7 @@ runs:
       shell: bash
       env:
         PACMAN_VERSION: 5.2.2
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Install build dependencies
         sudo apt-get update
