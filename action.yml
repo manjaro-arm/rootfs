@@ -68,54 +68,54 @@ runs:
           gpg \
           u-boot-tools
           
-          #Install pacman
-          sudo git clone https://gitlab.manjaro.org/packages/core/pacman.git
-          cd pacman
-          sudo wget https://sources.archlinux.org/other/pacman/pacman-5.2.2.tar.gz
-          sudo tar -xvf pacman-5.2.2.tar.gz
-          cd pacman-5.2.2
-          sudo patch -p1 -i ../pacman-sync-first-option.patch
-          sudo ./configure --prefix=/usr --sysconfdir=/etc \
-            --localstatedir=/var --enable-doc \
-            --with-scriptlet-shell=/usr/bin/bash \
-            --with-ldconfig=/usr/bin/ldconfig
-          sudo make V=1
-          sudo make install
-          cd ..
-          sudo install -m644 pacman.conf /etc/pacman.conf
-          sudo install -m644 makepkg.conf /etc/
-          sudo mkdir -p /etc/pacman.d
-          sudo touch /etc/pacman.d/mirrorlist
-          cd ..
+        #Install pacman
+        sudo git clone https://gitlab.manjaro.org/packages/core/pacman.git
+        cd pacman
+        sudo wget https://sources.archlinux.org/other/pacman/pacman-5.2.2.tar.gz
+        sudo tar -xvf pacman-5.2.2.tar.gz
+        cd pacman-5.2.2
+        sudo patch -p1 -i ../pacman-sync-first-option.patch
+        sudo ./configure --prefix=/usr --sysconfdir=/etc \
+          --localstatedir=/var --enable-doc \
+          --with-scriptlet-shell=/usr/bin/bash \
+          --with-ldconfig=/usr/bin/ldconfig
+        sudo make V=1
+        sudo make install
+        cd ..
+        sudo install -m644 pacman.conf /etc/pacman.conf
+        sudo install -m644 makepkg.conf /etc/
+        sudo mkdir -p /etc/pacman.d
+        sudo touch /etc/pacman.d/mirrorlist
+        cd ..
           
-          #Setup Qemu/binfmt
-          sudo wget https://gitlab.manjaro.org/packages/community/manjaro-arm-qemu-static/-/raw/master/qemu-static.conf -O /usr/lib/binfmt.d/qemu-static.conf
-          sudo service systemd-binfmt restart
+        #Setup Qemu/binfmt
+        sudo wget https://gitlab.manjaro.org/packages/community/manjaro-arm-qemu-static/-/raw/master/qemu-static.conf -O /usr/lib/binfmt.d/qemu-static.conf
+        sudo service systemd-binfmt restart
           
-          #Install Arch Install Scripts and Manjaro ARM Tools
-          pkgver=23
-          sudo wget https://git.archlinux.org/arch-install-scripts.git/snapshot/arch-install-scripts-$pkgver.tar.gz
-          sudo tar -xvf arch-install-scripts-$pkgver.tar.gz
-          sudo make -C arch-install-scripts-$pkgver
-          sudo make -C arch-install-scripts-$pkgver check
-          sudo make -C arch-install-scripts-$pkgver PREFIX=/usr install
-          sudo git clone https://gitlab.manjaro.org/manjaro-arm/applications/manjaro-arm-tools.git
-          install_m_a_tools() {
-              pkgname=manjaro-arm-tools
-              sudo install -dm777 /usr/share/$pkgname/lib
-              sudo install -dm777 /usr/share/$pkgname/profiles
-              sudo install -d /etc/$pkgname/
-              sudo install -dm777 /var/lib/$pkgname/{pkg,img,tmp,profiles}
-              sudo install -dm777 /var/cache/$pkgname/{pkg/pkg-cache,img}
-              sudo install -Dm755 $pkgname/lib/* /usr/share/$pkgname/lib/
-              sudo install -Dm755 $pkgname/bin/* /usr/bin/
-              sudo install -Dm755 $pkgname/lib/manjaro-arm-tools.conf /etc/manjaro-arm-tools/
-          }
-          install_m_a_tools
+        #Install Arch Install Scripts and Manjaro ARM Tools
+        pkgver=23
+        sudo wget https://git.archlinux.org/arch-install-scripts.git/snapshot/arch-install-scripts-$pkgver.tar.gz
+        sudo tar -xvf arch-install-scripts-$pkgver.tar.gz
+        sudo make -C arch-install-scripts-$pkgver
+        sudo make -C arch-install-scripts-$pkgver check
+        sudo make -C arch-install-scripts-$pkgver PREFIX=/usr install
+        sudo git clone https://gitlab.manjaro.org/manjaro-arm/applications/manjaro-arm-tools.git
+        install_m_a_tools() {
+            pkgname=manjaro-arm-tools
+            sudo install -dm777 /usr/share/$pkgname/lib
+            sudo install -dm777 /usr/share/$pkgname/profiles
+            sudo install -d /etc/$pkgname/
+            sudo install -dm777 /var/lib/$pkgname/{pkg,img,tmp,profiles}
+            sudo install -dm777 /var/cache/$pkgname/{pkg/pkg-cache,img}
+            sudo install -Dm755 $pkgname/lib/* /usr/share/$pkgname/lib/
+            sudo install -Dm755 $pkgname/bin/* /usr/bin/
+            sudo install -Dm755 $pkgname/lib/manjaro-arm-tools.conf /etc/manjaro-arm-tools/
+        }
+        install_m_a_tools
           
-          sudo sed -i -e 's|1>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh   
-          sudo sed -i -e 's|1> /dev/null 2>&1||g' /usr/share/manjaro-arm-tools/lib/functions.sh
-          sudo sed -i -e 's|2>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh 
+        sudo sed -i -e 's|1>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh   
+        sudo sed -i -e 's|1> /dev/null 2>&1||g' /usr/share/manjaro-arm-tools/lib/functions.sh
+        sudo sed -i -e 's|2>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh 
     - 
       name: checkout-arm-profiles
       shell: bash
@@ -131,28 +131,28 @@ runs:
         EDITION: ${{ inputs.edition }}
         BRANCH: ${{ inputs.branch }}
         VERSION: ${{ inputs.version }}
-        run: |
-          sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
-          sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH
+      run: |
+        sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
+        sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH
           
-          ls -lasih /var/cache/manjaro-arm-tools/img
+        ls -lasih /var/cache/manjaro-arm-tools/img
           
-          FILE_PATH=$(find /var/cache/manjaro-arm-tools/img -type f -name "*.img.xz" -exec stat -c '%Y %n' {} \; | sort -nr | awk 'NR==1 {print $2}')
-          cp -v $FILE_PATH .
-          echo "::set-output name=file-path::$(basename $FILE_PATH)"
+        FILE_PATH=$(find /var/cache/manjaro-arm-tools/img -type f -name "*.img.xz" -exec stat -c '%Y %n' {} \; | sort -nr | awk 'NR==1 {print $2}')
+        cp -v $FILE_PATH .
+        echo "::set-output name=file-path::$(basename $FILE_PATH)"
           
-          sha1sum $(basename $FILE_PATH) > $(basename $FILE_PATH).sha1
-          echo "::set-output name=file-sha1::$(basename $FILE_PATH).sha1"
-          mktorrent -v -a udp://tracker.opentrackr.org:1337 -l 21 -w https://github.com/$GITHUB_REPOSITORY/releases/download/$VERSION/$(basename $FILE_PATH) -o $(basename $FILE_PATH).torrent $(basename $FILE_PATH)
-          echo "::set-output name=file-torrent::$(basename $FILE_PATH).torrent"
+        sha1sum $(basename $FILE_PATH) > $(basename $FILE_PATH).sha1
+        echo "::set-output name=file-sha1::$(basename $FILE_PATH).sha1"
+        mktorrent -v -a udp://tracker.opentrackr.org:1337 -l 21 -w https://github.com/$GITHUB_REPOSITORY/releases/download/$VERSION/$(basename $FILE_PATH) -o $(basename $FILE_PATH).torrent $(basename $FILE_PATH)
+        echo "::set-output name=file-torrent::$(basename $FILE_PATH).torrent"
           
-          # Copy filepaths
-          echo "FILE_PATH=$(basename $FILE_PATH)" >> $GITHUB_ENV
-          echo "FILE_SHA1=$(basename $FILE_PATH).sha1" >> $GITHUB_ENV
-          echo "FILE_TORRENT=$(basename $FILE_PATH).torrent" >> $GITHUB_ENV
-          # echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
+        # Copy filepaths
+        echo "FILE_PATH=$(basename $FILE_PATH)" >> $GITHUB_ENV
+        echo "FILE_SHA1=$(basename $FILE_PATH).sha1" >> $GITHUB_ENV
+        echo "FILE_TORRENT=$(basename $FILE_PATH).torrent" >> $GITHUB_ENV
+        # echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
           
-          FILE_PKG=$(find /var/cache/manjaro-arm-tools/img -type f -name "*-pkgs.txt" -exec stat -c '%Y %n' {} \; | sort -nr | awk 'NR==1 {print $2}')
-          cp -v $FILE_PKG .
-          echo "::set-output name=file-pkg::$(basename $FILE_PKG)"
-          echo "FILE_PKG=$(basename $FILE_PKG)" >> $GITHUB_ENV
+        FILE_PKG=$(find /var/cache/manjaro-arm-tools/img -type f -name "*-pkgs.txt" -exec stat -c '%Y %n' {} \; | sort -nr | awk 'NR==1 {print $2}')
+        cp -v $FILE_PKG .
+        echo "::set-output name=file-pkg::$(basename $FILE_PKG)"
+        echo "FILE_PKG=$(basename $FILE_PKG)" >> $GITHUB_ENV
