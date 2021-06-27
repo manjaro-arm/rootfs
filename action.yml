@@ -140,12 +140,15 @@ runs:
         sudo git clone --depth 1 ${REPO} arm-profiles         
     -
       id: build
-      #shell: bash
+      shell: bash
       env:
         DEVICE: ${{ inputs.device }}
         EDITION: ${{ inputs.edition }}
         BRANCH: ${{ inputs.branch }}
         VERSION: ${{ inputs.version }}
+        CI_PUB_KEY: ${{ secrets.CI_PUB_KEY }}
+        CI_GPG_SECRET: ${{ secrets.CI_GPG_SECRET }}
+        CI_GPG_PASSPHRASE: ${{ secrets.CI_GPG_PASSPHRASE }}
       run: |
         sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
         sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH
@@ -170,20 +173,20 @@ runs:
         GPG="gpg --homedir=$GPG_HOMEDIR --no-tty --batch --yes"
           
         echo "unpack public key"
-        echo "${{ secrets.CI_PUB_KEY }}" | base64 --decode > "$PUBLIC_KEY_FILE"
+        echo "$CI_PUB_KEY" | base64 --decode > "$PUBLIC_KEY_FILE"
 
         echo "unpack secret key"
-        echo "${{ secrets.CI_GPG_SECRET }}" | base64 --decode > "$SECRET_KEY_FILE"
+        echo "$CI_GPG_SECRET" | base64 --decode > "$SECRET_KEY_FILE"
           
         echo "passphrase"
-        echo "${{ secrets.CI_GPG_PASSPHRASE }}" > "$PASSPHRASE_FILE"
+        echo "$CI_GPG_PASSPHRASE}" > "$PASSPHRASE_FILE"
           
         echo "Secrets unpacked..."
 
         paperkey --pubring "$PUBLIC_KEY_FILE" --secrets "$SECRET_KEY_FILE" \
         | $GPG --import &>/dev/null
 
-        $GPG --pinentry-mode loopback --detach-sign --use-agent -u "${{ secrets.CI_GPG_KEY }}" --passphrase-file "$PASSPHRASE_FILE" $(basename $FILE_PATH)
+        $GPG --pinentry-mode loopback --detach-sign --use-agent -u "$CI_GPG_KEY" --passphrase-file "$PASSPHRASE_FILE" $(basename $FILE_PATH)
 
         ls -lasih
           
