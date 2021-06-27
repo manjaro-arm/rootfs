@@ -21,16 +21,13 @@ inputs:
     default: "YY.MM"
   CI_PUB_KEY:
     description: 'public gpg key to use'
-    required: false
-    default: ${{ secrets.CI_PUB_KEY }}
+    required: true
   CI_GPG_SECRET: 
     description: 'private key to use'
-    required: false
-    default: ${{ secrets.CI_GPG_SECRET }}
+    required: true
   CI_GPG_PASSPHRASE: 
     description: 'passphrase for private key'
-    required: false
-    default: ${{ secrets.CI_GPG_PASSPHRASE }}
+    required: true
 outputs:
   file-pkg:
     description: "compressed files"
