@@ -19,6 +19,18 @@ inputs:
     description: 'image version'
     required: false
     default: "YY.MM"
+  CI_PUB_KEY:
+    description: 'public gpg key to use'
+    required: false
+    default: ${{ secrets.CI_PUB_KEY }}
+  CI_GPG_SECRET: 
+    description: 'private key to use'
+    required: false
+    default: ${{ secrets.CI_GPG_SECRET }}
+  CI_GPG_PASSPHRASE: 
+    description: 'passphrase for private key'
+    required: false
+    default: ${{ secrets.CI_GPG_PASSPHRASE }}
 outputs:
   file-pkg:
     description: "compressed files"
@@ -146,9 +158,9 @@ runs:
         EDITION: ${{ inputs.edition }}
         BRANCH: ${{ inputs.branch }}
         VERSION: ${{ inputs.version }}
-        CI_PUB_KEY: ${{ secrets.CI_PUB_KEY }}
-        CI_GPG_SECRET: ${{ secrets.CI_GPG_SECRET }}
-        CI_GPG_PASSPHRASE: ${{ secrets.CI_GPG_PASSPHRASE }}
+        CI_PUB_KEY: ${{ inputs.CI_PUB_KEY }}
+        CI_GPG_SECRET: ${{ inputs.CI_GPG_SECRET }}
+        CI_GPG_PASSPHRASE: ${{ inputs.CI_GPG_PASSPHRASE }}
       run: |
         sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
         sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH
