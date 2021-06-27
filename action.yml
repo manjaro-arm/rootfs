@@ -36,12 +36,9 @@ runs:
   using: "composite"
   steps:
     -  
-      name: install-arm-tools
+      name: install-build-dependencies
       shell: bash
-      env:
-        PACMAN_VERSION: 5.2.2
       run: |
-        # Install build dependencies
         sudo apt-get update
         sudo apt install \
           gdisk \
@@ -68,12 +65,17 @@ runs:
           gpg \
           u-boot-tools
           
-        #Install pacman
-        sudo git clone https://gitlab.manjaro.org/packages/core/pacman.git
-        cd pacman
-        sudo wget https://sources.archlinux.org/other/pacman/pacman-5.2.2.tar.gz
-        sudo tar -xvf pacman-5.2.2.tar.gz
-        cd pacman-5.2.2
+    -
+      name: install-pacman
+      shell: bash
+      env:
+        PACMAN_VERSION: 5.2.2
+      run: |
+        sudo git clone --depth 1 https://gitlab.manjaro.org/packages/core/pacman.git
+        pushd pacman
+        sudo wget https://sources.archlinux.org/other/pacman/pacman-${PACMAN_VERSION}.tar.gz
+        sudo tar -xvf pacman-${PACMAN_VERSION}.tar.gz
+        pushd pacman-${PACMAN_VERSION}
         sudo patch -p1 -i ../pacman-sync-first-option.patch
         sudo ./configure --prefix=/usr --sysconfdir=/etc \
           --localstatedir=/var --enable-doc \
@@ -81,24 +83,34 @@ runs:
           --with-ldconfig=/usr/bin/ldconfig
         sudo make V=1
         sudo make install
-        cd ..
+        popd
         sudo install -m644 pacman.conf /etc/pacman.conf
         sudo install -m644 makepkg.conf /etc/
         sudo mkdir -p /etc/pacman.d
         sudo touch /etc/pacman.d/mirrorlist
-        cd ..
-          
-        #Setup Qemu/binfmt
+        popd
+    -
+      name: setup-qemu-binfmt
+      shell: bash
+      run: |
         sudo wget https://gitlab.manjaro.org/packages/community/manjaro-arm-qemu-static/-/raw/master/qemu-static.conf -O /usr/lib/binfmt.d/qemu-static.conf
         sudo service systemd-binfmt restart
           
-        #Install Arch Install Scripts and Manjaro ARM Tools
-        pkgver=23
-        sudo wget https://git.archlinux.org/arch-install-scripts.git/snapshot/arch-install-scripts-$pkgver.tar.gz
-        sudo tar -xvf arch-install-scripts-$pkgver.tar.gz
-        sudo make -C arch-install-scripts-$pkgver
-        sudo make -C arch-install-scripts-$pkgver check
-        sudo make -C arch-install-scripts-$pkgver PREFIX=/usr install
+    - 
+      name: install-arch-install-scripts
+      shell: bash
+      env:
+        VERSION: 24
+      run: |
+        sudo wget https://github.com/archlinux/arch-install-scripts/archive/refs/tags/v${VERSION}.tar.gz -O arch-install-scripts.tar.gz
+        sudo tar -xvf arch-install-scripts.tar.gz
+        sudo make -C arch-install-scripts-${VERSION}
+        sudo make -C arch-install-scripts-${VERSION} check
+        sudo make -C arch-install-scripts-${VERSION} PREFIX=/usr install
+    -
+      name: install-manjaro-arm-tools
+      shell: bash
+      run: |
         sudo git clone https://gitlab.manjaro.org/manjaro-arm/applications/manjaro-arm-tools.git
         install_m_a_tools() {
             pkgname=manjaro-arm-tools
