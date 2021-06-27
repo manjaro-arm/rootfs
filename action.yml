@@ -140,7 +140,7 @@ runs:
         sudo git clone --depth 1 ${REPO} arm-profiles         
     -
       id: build
-      shell: bash
+      #shell: bash
       env:
         DEVICE: ${{ inputs.device }}
         EDITION: ${{ inputs.edition }}
