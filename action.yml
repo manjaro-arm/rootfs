@@ -188,7 +188,7 @@ runs:
         echo "$CI_GPG_SECRET" | base64 --decode > "$SECRET_KEY_FILE"
           
         echo "passphrase"
-        echo "$CI_GPG_PASSPHRASE}" > "$PASSPHRASE_FILE"
+        echo "$CI_GPG_PASSPHRASE" > "$PASSPHRASE_FILE"
           
         echo "Secrets unpacked..."
 
