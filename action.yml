@@ -19,6 +19,9 @@ inputs:
     description: 'image version'
     required: false
     default: "YY.MM"
+  overlay-repo:
+    description: 'custom overlay repo'
+    required: false
 #  CI_PUB_KEY:
 #    description: 'public gpg key to use'
 #    required: true
@@ -160,7 +163,11 @@ runs:
         #CI_GPG_PASSPHRASE: ${{ inputs.CI_GPG_PASSPHRASE }}
       run: |
         sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
-        sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH
+        if [ -z ${{ inputs.overlay-repo }} ]; then 
+          sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH
+        else
+          sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH -k ${{ inputs.overlay-repo }}
+        fi
           
         ls -lasih /var/cache/manjaro-arm-tools/img
           
