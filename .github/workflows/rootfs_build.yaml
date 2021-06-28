@@ -44,17 +44,43 @@ jobs:
         uses: nanzm/get-time-action@v1.1
         with:
           format: 'YYYYMMDD'
-      -
-        name: install-arm-tools
+      -  
+        name: install-build-dependencies
+        shell: bash
         run: |
           sudo apt-get update
-          sudo apt install gdisk zip systemd-container asciidoc libarchive-tools git build-essential cmake libarchive-dev pkg-config libcurl4-openssl-dev libgpgme-dev libssl-dev fakeroot dh-autoreconf qemu-utils qemu-efi-aarch64 qemu-system-arm qemu-user-static
+          sudo apt install \
+            gdisk \
+            zip \
+            systemd-container \
+            bmap-tools asciidoc \
+            libarchive-tools \
+            git \
+            build-essential \
+            cmake \
+            libarchive-dev \
+            pkg-config \
+            libcurl4-openssl-dev \
+            libgpgme-dev \
+            libssl-dev \
+            fakeroot \
+            dh-autoreconf \
+            qemu-utils \
+            qemu-efi-aarch64 \
+            qemu-system-arm \
+            qemu-user-static \
           
-          sudo git clone https://gitlab.manjaro.org/packages/core/pacman.git
-          cd pacman
-          sudo wget https://sources.archlinux.org/other/pacman/pacman-5.2.2.tar.gz
-          sudo tar -xvf pacman-5.2.2.tar.gz
-          cd pacman-5.2.2
+      -
+        name: install-pacman
+        shell: bash
+        env:
+          PACMAN_VERSION: 5.2.2
+        run: |
+          sudo git clone --depth 1 https://gitlab.manjaro.org/packages/core/pacman.git
+          pushd pacman
+          sudo wget https://sources.archlinux.org/other/pacman/pacman-${PACMAN_VERSION}.tar.gz
+          sudo tar -xvf pacman-${PACMAN_VERSION}.tar.gz
+          pushd pacman-${PACMAN_VERSION}
           sudo patch -p1 -i ../pacman-sync-first-option.patch
           sudo ./configure --prefix=/usr --sysconfdir=/etc \
             --localstatedir=/var --enable-doc \
@@ -62,25 +88,35 @@ jobs:
             --with-ldconfig=/usr/bin/ldconfig
           sudo make V=1
           sudo make install
-          cd ..
+          popd
           sudo install -m644 pacman.conf /etc/pacman.conf
           sudo install -m644 makepkg.conf /etc/
           sudo mkdir -p /etc/pacman.d
           sudo touch /etc/pacman.d/mirrorlist
-          cd ..
-          
+          popd
+      -
+        name: setup-qemu-binfmt
+        shell: bash
+        run: |
           sudo wget https://gitlab.manjaro.org/packages/community/manjaro-arm-qemu-static/-/raw/master/qemu-static.conf -O /usr/lib/binfmt.d/qemu-static.conf
           sudo service systemd-binfmt restart
           
-          pkgver=23
-          sudo wget https://git.archlinux.org/arch-install-scripts.git/snapshot/arch-install-scripts-$pkgver.tar.gz
-          sudo tar -xvf arch-install-scripts-$pkgver.tar.gz
-          sudo make -C arch-install-scripts-$pkgver
-          sudo make -C arch-install-scripts-$pkgver check
-          sudo make -C arch-install-scripts-$pkgver PREFIX=/usr install
-
+      - 
+        name: install-arch-install-scripts
+        shell: bash
+        env:
+          VERSION: 24
+        run: |
+          sudo wget https://github.com/archlinux/arch-install-scripts/archive/refs/tags/v${VERSION}.tar.gz -O arch-install-scripts.tar.gz
+          sudo tar -xvf arch-install-scripts.tar.gz
+          sudo make -C arch-install-scripts-${VERSION}
+          sudo make -C arch-install-scripts-${VERSION} check
+          sudo make -C arch-install-scripts-${VERSION} PREFIX=/usr install
+      -
+        name: install-manjaro-arm-tools
+        shell: bash
+        run: |
           sudo git clone https://gitlab.manjaro.org/manjaro-arm/applications/manjaro-arm-tools.git
-
           install_m_a_tools() {
               pkgname=manjaro-arm-tools
               sudo install -dm777 /usr/share/$pkgname/lib
@@ -96,9 +132,10 @@ jobs:
           
           sudo sed -i -e 's|1>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh   
           sudo sed -i -e 's|1> /dev/null 2>&1||g' /usr/share/manjaro-arm-tools/lib/functions.sh
-          sudo sed -i -e 's|2>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh
+          sudo sed -i -e 's|2>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh 
       -
         name: build
+        shell: bash
         run: |
           sudo buildrootfs
           
