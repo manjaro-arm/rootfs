@@ -38,9 +38,9 @@ outputs:
   file-path:
     description: "path of the generated image"
     value: ${{ steps.build.outputs.file-path }}
-  file-sha256:
+  file-sha1:
     description: "checksum file for the image"
-    value: ${{ steps.build.outputs.file-sha256 }}
+    value: ${{ steps.build.outputs.file-sha1 }}
   file-torrent:
     description: "torrent file for the image"
     value: ${{ steps.build.outputs.file-torrent }}
