@@ -22,15 +22,15 @@ inputs:
   overlay-repo:
     description: 'custom overlay repo'
     required: false
-  CI_PUB_KEY:
-    description: 'public gpg key to use'
-    required: true
-  CI_GPG_SECRET: 
-    description: 'private key to use'
-    required: true
-  CI_GPG_PASSPHRASE: 
-    description: 'passphrase for private key'
-    required: true
+#  CI_PUB_KEY:
+#    description: 'public gpg key to use'
+#    required: true
+#  CI_GPG_SECRET: 
+#    description: 'private key to use'
+#    required: true
+#  CI_GPG_PASSPHRASE: 
+#    description: 'passphrase for private key'
+#    required: true
 outputs:
   file-pkg:
     description: "compressed files"
@@ -227,15 +227,15 @@ runs:
         echo "::set-output name=file-pkg::$(basename $FILE_PKG)"
         echo "FILE_PKG=$(basename $FILE_PKG)" >> $GITHUB_ENV
 
-    -
-      id: gpg_sign
-      shell: bash
-      run: |
-        if [ -z "${{ inputs.CI_GPG_SECRET }}" ]; then 
-          echo "no gpg secret given"
-          exit 0
-        fi
-        cat <(echo -e "${{ inputs.CI_GPG_SECRET }}" | base64 --decode) | gpg --batch --import
-        shopt -s extglob
-        gpg --pinentry-mode loopback --passphrase "${{ inputs.CI_GPG_PASSPHRASE }}" --detach-sign $(basename $FILE_PATH)
-        echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
+#    -
+#      id: gpg_sign
+#      shell: bash
+#      run: |
+#        if [ -z "${{ inputs.CI_GPG_SECRET }}" ]; then 
+#          echo "no gpg secret given"
+#          exit 0
+#        fi
+#        cat <(echo -e "${{ inputs.CI_GPG_SECRET }}" | base64 --decode) | gpg --batch --import
+#        shopt -s extglob
+#        gpg --pinentry-mode loopback --passphrase "${{ inputs.CI_GPG_PASSPHRASE }}" --detach-sign $(basename $FILE_PATH)
+#        echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
