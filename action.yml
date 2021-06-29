@@ -230,7 +230,7 @@ runs:
       id: gpg_sign
       shell: bash
       run: |
-        if [ -z ${{ inputs.CI_GPG_SECRET }} ]; then 
+        if [ -z "${{ inputs.CI_GPG_SECRET }}" ]; then 
           echo "no gpg secret given"
           exit 0
         fi
