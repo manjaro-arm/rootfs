@@ -78,6 +78,7 @@ runs:
           mktorrent \
           paperkey \
           gpg \
+          ca-certificates \
           u-boot-tools
           
     -
