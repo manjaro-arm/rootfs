@@ -79,7 +79,6 @@ runs:
           paperkey \
           gpg \
           ca-certificates \
-          policykit-1 \
           u-boot-tools
         sudo pip3 install meson
         sudo pip3 install ninja
