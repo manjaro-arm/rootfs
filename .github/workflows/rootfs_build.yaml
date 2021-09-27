@@ -68,7 +68,9 @@ jobs:
             qemu-utils \
             qemu-efi-aarch64 \
             qemu-system-arm \
-            qemu-user-static \
+            qemu-user-static
+          sudo pip3 install meson
+          sudo pip3 install ninja
           
       -
         name: install-pacman
