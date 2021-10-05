@@ -160,8 +160,8 @@ runs:
         EDITION: ${{ inputs.edition }}
         BRANCH: ${{ inputs.branch }}
         VERSION: ${{ inputs.version }}
-        gpg-key: ${{ secrets.CI_GPG_KEY }}
-        gpg-passphrase: ${{ secrets.CI_GPG_PASSPHRASE }}
+        #gpg-key: ${{ inputs.CI_GPG_KEY }}
+        #gpg-passphrase: ${{ inputs.CI_GPG_PASSPHRASE }}
       run: |
         sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
         if [ -z ${{ inputs.overlay-repo }} ]; then 
