@@ -26,15 +26,12 @@ inputs:
     description: 'image type: normal (default), factory'
     required: false
     default: normal
-#  CI_PUB_KEY:
-#    description: 'public gpg key to use'
-#    required: true
-#  CI_GPG_SECRET: 
-#    description: 'private key to use'
-#    required: true
-#  CI_GPG_PASSPHRASE: 
-#    description: 'passphrase for private key'
-#    required: true
+  gpg-key:
+    description: 'gpg signing key'
+    required: true
+  gpg-passphrase:
+    description: 'gpg passphrase'
+    required: true
 outputs:
   file-pkg:
     description: "compressed files"
@@ -162,7 +159,7 @@ runs:
       env:
         REPO: ${{ inputs.arm-profiles-repo }}
       run: |
-        sudo git clone --depth 1 ${REPO} arm-profiles         
+        sudo git clone --depth 1 ${REPO} arm-profiles      
     -
       id: build
       shell: bash
@@ -172,9 +169,6 @@ runs:
         BRANCH: ${{ inputs.branch }}
         VERSION: ${{ inputs.version }}
         IMGTYPE: ${{ inputs.imgtype }}
-        #CI_PUB_KEY: ${{ inputs.CI_PUB_KEY }}
-        #CI_GPG_SECRET: ${{ inputs.CI_GPG_SECRET }}
-        #CI_GPG_PASSPHRASE: ${{ inputs.CI_GPG_PASSPHRASE }}
       run: |
         [ "$IMGTYPE" != "factory" ] && unset IMGTYPE
         sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
@@ -194,62 +188,24 @@ runs:
         echo "file-sha1=$(basename $FILE_PATH).sha1" >> $GITHUB_OUTPUT
         mktorrent -v -a udp://tracker.opentrackr.org:1337 -l 21 -w https://github.com/$GITHUB_REPOSITORY/releases/download/$VERSION/$(basename $FILE_PATH) -o $(basename $FILE_PATH).torrent $(basename $FILE_PATH)
         echo "file-torrent=$(basename $FILE_PATH).torrent" >> $GITHUB_OUTPUT
-        
-        # Do GPG signing
-        #echo "setup values"
-        #GPG_HOMEDIR="$(mktemp -d -t gnupg.XXX)"
-        #SECRET_KEY_FILE="$GPG_HOMEDIR/secret.key"
-        #PUBLIC_KEY_FILE="$GPG_HOMEDIR/public_key.gpg"
-        #PASSPHRASE_FILE="$GPG_HOMEDIR/passphrase.file"
-        #GPG="gpg --homedir=$GPG_HOMEDIR --no-tty --batch --yes"
-          
-        #echo "unpack public key"
-        #echo "$CI_PUB_KEY" | base64 --decode > "$PUBLIC_KEY_FILE"
-
-        #echo "unpack secret key"
-        #echo "$CI_GPG_SECRET" | base64 --decode > "$SECRET_KEY_FILE"
-          
-        #echo "passphrase"
-        #echo "$CI_GPG_PASSPHRASE" > "$PASSPHRASE_FILE"
-          
-        #echo "Secrets unpacked..."
-
-        #paperkey --pubring "$PUBLIC_KEY_FILE" --secrets "$SECRET_KEY_FILE" \
-        #| $GPG --import &>/dev/null
-
-        #$GPG --pinentry-mode loopback --detach-sign --use-agent -u "$CI_GPG_KEY" --passphrase-file "$PASSPHRASE_FILE" $(basename $FILE_PATH)
-
-        #ls -lasih
-          
-        #echo "Verifying file"
-        #$GPG --verify $(basename $FILE_PATH).sig $(basename $FILE_PATH)
-        #echo "file-signature=$(basename $FILE_PATH).sig" >> $GITHUB_OUTPUT
-          
-        #echo "cleaning up"
-        #find "$GPG_HOMEDIR" -type f -exec shred {} \;
-        #rm -rf "$GPG_HOMEDIR"
-        #echo "script done"
           
         # Copy filepaths
         echo "FILE_PATH=$(basename $FILE_PATH)" >> $GITHUB_ENV
         echo "FILE_SHA1=$(basename $FILE_PATH).sha1" >> $GITHUB_ENV
         echo "FILE_TORRENT=$(basename $FILE_PATH).torrent" >> $GITHUB_ENV
         #echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
-          
+
         FILE_PKG=$(find /var/cache/manjaro-arm-tools/img -type f -name "*-pkgs.txt" -exec stat -c '%Y %n' {} \; | sort -nr | awk 'NR==1 {print $2}')
         cp -v $FILE_PKG .
         echo "file-pkg=$(basename $FILE_PKG)" >> $GITHUB_OUTPUT
         echo "FILE_PKG=$(basename $FILE_PKG)" >> $GITHUB_ENV
 
-#    -
-#      id: gpg_sign
-#      shell: bash
-#      run: |
-#        if [ -z "${{ inputs.CI_GPG_SECRET }}" ]; then 
-#          echo "no gpg secret given"
-#          exit 0
-#        fi
-#        cat <(echo -e "${{ inputs.CI_GPG_SECRET }}" | base64 --decode) | gpg --batch --import
-#        shopt -s extglob
-#        gpg --pinentry-mode loopback --passphrase "${{ inputs.CI_GPG_PASSPHRASE }}" --detach-sign $(basename $FILE_PATH)
-#        echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
+    -
+      id: gpg_sign
+      shell: bash -O extglob {0}
+      run: |      
+        cat <(echo -e "${{ inputs.gpg-key }}" | base64 --decode) | gpg --batch --import &>/dev/null
+        for p in $(find $PWD -maxdepth 1 -regex '.*\.img\.xz'); do
+          gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg-passphrase }}" --detach-sign ${p}
+        done
+        echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
