@@ -22,15 +22,12 @@ inputs:
   overlay-repo:
     description: 'custom overlay repo'
     required: false
-#  CI_PUB_KEY:
-#    description: 'public gpg key to use'
-#    required: true
-#  CI_GPG_SECRET: 
-#    description: 'private key to use'
-#    required: true
-#  CI_GPG_PASSPHRASE: 
-#    description: 'passphrase for private key'
-#    required: true
+  gpg-key:
+    descriptio: 'gpg signing key'
+    required: true
+  gpg-passphrase:
+    description: 'gpg passphrase'
+    required: true
 outputs:
   file-pkg:
     description: "compressed files"
@@ -163,9 +160,8 @@ runs:
         EDITION: ${{ inputs.edition }}
         BRANCH: ${{ inputs.branch }}
         VERSION: ${{ inputs.version }}
-        #CI_PUB_KEY: ${{ inputs.CI_PUB_KEY }}
-        #CI_GPG_SECRET: ${{ inputs.CI_GPG_SECRET }}
-        #CI_GPG_PASSPHRASE: ${{ inputs.CI_GPG_PASSPHRASE }}
+        gpg-key: ${{ secrets.CI_GPG_KEY }}
+        gpg-passphrase: ${{ secrets.CI_GPG_PASSPHRASE }}
       run: |
         sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
         if [ -z ${{ inputs.overlay-repo }} ]; then 
@@ -224,22 +220,18 @@ runs:
         echo "FILE_PATH=$(basename $FILE_PATH)" >> $GITHUB_ENV
         echo "FILE_SHA1=$(basename $FILE_PATH).sha1" >> $GITHUB_ENV
         echo "FILE_TORRENT=$(basename $FILE_PATH).torrent" >> $GITHUB_ENV
-        #echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
           
         FILE_PKG=$(find /var/cache/manjaro-arm-tools/img -type f -name "*-pkgs.txt" -exec stat -c '%Y %n' {} \; | sort -nr | awk 'NR==1 {print $2}')
         cp -v $FILE_PKG .
         echo "::set-output name=file-pkg::$(basename $FILE_PKG)"
         echo "FILE_PKG=$(basename $FILE_PKG)" >> $GITHUB_ENV
 
-#    -
-#      id: gpg_sign
-#      shell: bash
-#      run: |
-#        if [ -z "${{ inputs.CI_GPG_SECRET }}" ]; then 
-#          echo "no gpg secret given"
-#          exit 0
-#        fi
-#        cat <(echo -e "${{ inputs.CI_GPG_SECRET }}" | base64 --decode) | gpg --batch --import
-#        shopt -s extglob
-#        gpg --pinentry-mode loopback --passphrase "${{ inputs.CI_GPG_PASSPHRASE }}" --detach-sign $(basename $FILE_PATH)
-#        echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
+    -
+      id: gpg_sign
+      shell: bash -O extglob {0}
+      run: |      
+        cat <(echo -e "${{ inputs.gpg-key }}" | base64 --decode) | gpg --batch --import &>/dev/null
+        for p in $(find $PWD -maxdepth 1 -regex '.*\.img\.xz'); do
+          gpg --pinentry-mode loopback --passphrase "${{ inputs.gpg-passphrase }}" --detach-sign ${p}
+        done
+        echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
