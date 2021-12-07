@@ -25,7 +25,7 @@ inputs:
   factory:
     description: 'factory image'
     required: false
-    default: no
+    default: normal
 #  CI_PUB_KEY:
 #    description: 'public gpg key to use'
 #    required: true
@@ -172,7 +172,7 @@ runs:
         #CI_GPG_SECRET: ${{ inputs.CI_GPG_SECRET }}
         #CI_GPG_PASSPHRASE: ${{ inputs.CI_GPG_PASSPHRASE }}
       run: |
-        [ "$FACTORY" != "yes" ] && unset FACTORY
+        [ "$FACTORY" != "factory" ] && unset FACTORY
         sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
         if [ -z ${{ inputs.overlay-repo }} ]; then 
           sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH ${FACTORY:+-f}
