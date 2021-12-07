@@ -22,8 +22,8 @@ inputs:
   overlay-repo:
     description: 'custom overlay repo'
     required: false
-  factory:
-    description: 'factory image'
+  imgtype:
+    description: 'image type: normal (default), factory'
     required: false
     default: normal
 #  CI_PUB_KEY:
@@ -167,17 +167,17 @@ runs:
         EDITION: ${{ inputs.edition }}
         BRANCH: ${{ inputs.branch }}
         VERSION: ${{ inputs.version }}
-        FACTORY: ${{ inputs.factory }}
+        IMGTYPE: ${{ inputs.imgtype }}
         #CI_PUB_KEY: ${{ inputs.CI_PUB_KEY }}
         #CI_GPG_SECRET: ${{ inputs.CI_GPG_SECRET }}
         #CI_GPG_PASSPHRASE: ${{ inputs.CI_GPG_PASSPHRASE }}
       run: |
-        [ "$FACTORY" != "factory" ] && unset FACTORY
+        [ "$IMGTYPE" != "factory" ] && unset IMGTYPE
         sudo mv -v $GITHUB_WORKSPACE/arm-profiles /usr/share/manjaro-arm-tools/profiles
         if [ -z ${{ inputs.overlay-repo }} ]; then 
-          sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH ${FACTORY:+-f}
+          sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH ${IMGTYPE:+-f}
         else
-          sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH -k ${{ inputs.overlay-repo }} ${FACTORY:+-f}
+          sudo buildarmimg -d $DEVICE -e $EDITION -v $VERSION -b $BRANCH -k ${{ inputs.overlay-repo }} ${IMGTYPE:+-f}
         fi
           
         ls -lasih /var/cache/manjaro-arm-tools/img
