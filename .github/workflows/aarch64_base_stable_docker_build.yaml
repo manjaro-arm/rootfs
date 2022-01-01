@@ -159,6 +159,8 @@ jobs:
           
           # Create Dockerfile
           echo "FROM scratch\nADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > ./Dockerfile
+          echo "ADD $BUILDDIR/$ARCH" >> ./Dockerfile
+          echo 'CMD ["bash"]' >> ./Dockerfile
       -
         name: build-image
         run: |
