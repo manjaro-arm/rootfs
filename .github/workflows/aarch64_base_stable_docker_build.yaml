@@ -1,0 +1,171 @@
+name: aarch64_base_stable_docker_build
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '30 1 * * 1'
+
+jobs:
+  build-container:
+    runs-on: ubuntu-20.04
+    needs: prepare_release
+    steps:
+      - 
+        uses: styfle/cancel-workflow-action@0.9.0
+        with:
+          access_token: ${{ github.token }}
+      - 
+        id: time
+        uses: nanzm/get-time-action@v1.1
+        with:
+          format: 'YYYYMMDD'
+      -  
+        name: install-build-dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt install \
+            gdisk \
+            zip \
+            systemd-container \
+            bmap-tools asciidoc \
+            libarchive-tools \
+            git \
+            build-essential \
+            cmake \
+            libarchive-dev \
+            pkg-config \
+            libcurl4-openssl-dev \
+            libgpgme-dev \
+            libssl-dev \
+            fakeroot \
+            dh-autoreconf \
+            qemu-utils \
+            qemu-efi-aarch64 \
+            qemu-system-arm \
+            qemu-user-static \
+            docker
+          sudo pip3 install meson
+          sudo pip3 install ninja
+          
+      -
+        name: install-pacman
+        shell: bash
+        env:
+          PACMAN_VERSION: 6.0.1
+        run: |
+          sudo git clone --depth 1 https://gitlab.manjaro.org/packages/core/pacman.git
+          pushd pacman
+            sudo wget https://sources.archlinux.org/other/pacman/pacman-${PACMAN_VERSION}.tar.xz
+            sudo tar -xvf pacman-${PACMAN_VERSION}.tar.xz
+            pushd pacman-${PACMAN_VERSION}
+              sudo patch -p1 -i ../pacman-sync-first-option.patch
+              sudo meson --prefix=/usr \
+                        --buildtype=plain \
+                        -Ddoc=disabled \
+                        -Ddoxygen=enabled \
+                        -Dscriptlet-shell=/usr/bin/bash \
+                        -Dldconfig=/usr/bin/ldconfig \
+                        build
+              sudo meson compile -C build
+              sudo meson install -C build
+            popd
+            sudo install -m644 pacman.conf /etc/pacman.conf
+            sudo install -m644 makepkg.conf /etc/
+            sudo mkdir -p /etc/pacman.d
+            sudo touch /etc/pacman.d/mirrorlist
+          popd
+      -
+        name: setup-qemu-binfmt
+        shell: bash
+        run: |
+          sudo wget https://gitlab.manjaro.org/packages/community/manjaro-arm-qemu-static/-/raw/master/qemu-static.conf -O /usr/lib/binfmt.d/qemu-static.conf
+          sudo service systemd-binfmt restart
+          
+      - 
+        name: install-arch-install-scripts
+        shell: bash
+        env:
+          VERSION: 24
+        run: |
+          sudo wget https://github.com/archlinux/arch-install-scripts/archive/refs/tags/v${VERSION}.tar.gz -O arch-install-scripts.tar.gz
+          sudo tar -xvf arch-install-scripts.tar.gz
+          sudo make -C arch-install-scripts-${VERSION}
+          sudo make -C arch-install-scripts-${VERSION} check
+          sudo make -C arch-install-scripts-${VERSION} PREFIX=/usr install
+      -
+        name: install-manjaro-arm-tools
+        shell: bash
+        run: |
+          sudo git clone https://gitlab.manjaro.org/manjaro-arm/applications/manjaro-arm-tools.git
+          install_m_a_tools() {
+              pkgname=manjaro-arm-tools
+              sudo install -dm777 /usr/share/$pkgname/lib
+              sudo install -dm777 /usr/share/$pkgname/profiles
+              sudo install -d /etc/$pkgname/
+              sudo install -dm777 /var/lib/$pkgname/{pkg,img,tmp,profiles}
+              sudo install -dm777 /var/cache/$pkgname/{pkg/pkg-cache,img}
+              sudo install -Dm755 $pkgname/lib/* /usr/share/$pkgname/lib/
+              sudo install -Dm755 $pkgname/bin/* /usr/bin/
+              sudo install -Dm755 $pkgname/lib/manjaro-arm-tools.conf /etc/manjaro-arm-tools/
+          }
+          install_m_a_tools
+          
+          sudo sed -i -e 's|1>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh   
+          sudo sed -i -e 's|1> /dev/null 2>&1||g' /usr/share/manjaro-arm-tools/lib/functions.sh
+          sudo sed -i -e 's|2>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh 
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      -
+        name: build
+        shell: bash
+        run: |
+          # Set globals
+          LIBDIR=/usr/share/manjaro-arm-tools/lib
+          ARCH="aarch64"
+          DOCKER_IMAGE_NAME="manjaro-$ARCH-base"
+
+          source $LIBDIR/functions.sh
+          
+          create_rootfs () {
+            msg "Creating rootfs..."
+    
+            # Remove old rootfs if it exists
+            if [ -d $BUILDDIR/$ARCH ]; then
+            echo "Removing old rootfs..."
+            rm -rf $BUILDDIR/$ARCH
+            fi
+
+            # cd to root_fs
+            mkdir -p $BUILDDIR/$ARCH
+
+            #pacstrap the rootfs filesystem
+            $LIBDIR/pacstrap -G -c -C $LIBDIR/pacman.conf.$ARCH $BUILDDIR/$ARCH base-devel
+
+            # Enable cross architecture Chrooting
+            cp /usr/bin/qemu-aarch64-static $BUILDDIR/$ARCH/usr/bin/
+    
+            # fix SSL in the rootfs
+            rm -f $BUILDDIR/$ARCH/etc/ssl/certs/ca-certificates.crt
+            rm -f $BUILDDIR/$ARCH/etc/ca-certificates/extracted/tls-ca-bundle.pem
+            cp -a /etc/ssl/certs/ca-certificates.crt $BUILDDIR/$ARCH/etc/ssl/certs/
+            cp -a /etc/ca-certificates/extracted/tls-ca-bundle.pem $BUILDDIR/$ARCH/etc/ca-certificates/extracted/
+    
+            info "Setting up keyrings..."
+            $NSPAWN $BUILDDIR/$ARCH pacman-key --init 1> /dev/null 2>&1
+            $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm 1> /dev/null 2>&1
+            $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5 1> /dev/null 2>&1
+          }
+          
+          compress_docker () {
+            msg "Making Docker image..."
+            # make sure docker service is running
+            systemctl start docker
+            # create the docker image itself
+            tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | docker import - $DOCKER_IMAGE_NAME 1> /dev/null 2>&1
+            docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
+            docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
+          }
