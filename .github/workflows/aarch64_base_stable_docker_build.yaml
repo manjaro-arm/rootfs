@@ -159,7 +159,7 @@ jobs:
           
           # Create Dockerfile
           echo "FROM scratch" > ./Dockerfile
-          echo "COPY $BUILDDIR/$ARCH /" >> ./Dockerfile
+          echo "COPY $BUILDDIR/$ARCH/ /" >> ./Dockerfile
           echo 'CMD ["bash"]' >> ./Dockerfile
       -
         name: build-image
