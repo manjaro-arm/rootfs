@@ -150,9 +150,9 @@ jobs:
           sudo $NSPAWN $BUILDDIR/$ARCH update-ca-trust
     
           info "Setting up keyrings..."
-          sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init 1> /dev/null 2>&1
-          sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm 1> /dev/null 2>&1
-          sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5 1> /dev/null 2>&1
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5
 
           msg "Making Docker image..."
           # make sure docker service is running
@@ -160,7 +160,7 @@ jobs:
           #sudo systemctl unmask docker.socket
           #sudo systemctl start docker.service
           # create the docker image itself
-          sudo tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | docker import - $DOCKER_IMAGE_NAME 1> /dev/null 2>&1
+          sudo tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | sudo docker import - $DOCKER_IMAGE_NAME
           sudo docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
           sudo docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
           sudo docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
