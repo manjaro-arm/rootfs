@@ -129,45 +129,39 @@ jobs:
 
           source $LIBDIR/functions.sh
           
-          create_rootfs () {
-            msg "Creating rootfs..."
+          msg "Creating rootfs..."
     
-            # Remove old rootfs if it exists
-            if [ -d $BUILDDIR/$ARCH ]; then
-            echo "Removing old rootfs..."
-            rm -rf $BUILDDIR/$ARCH
-            fi
+          # Remove old rootfs if it exists
+          if [ -d $BUILDDIR/$ARCH ]; then
+          echo "Removing old rootfs..."
+          sudo rm -rf $BUILDDIR/$ARCH
+          fi
 
-            # cd to root_fs
-            mkdir -p $BUILDDIR/$ARCH
+          # cd to root_fs
+          sudo mkdir -p $BUILDDIR/$ARCH
 
-            #pacstrap the rootfs filesystem
-            $LIBDIR/pacstrap -G -c -C $LIBDIR/pacman.conf.$ARCH $BUILDDIR/$ARCH base-devel
+          #pacstrap the rootfs filesystem
+          sudo $LIBDIR/pacstrap -G -c -C $LIBDIR/pacman.conf.$ARCH $BUILDDIR/$ARCH base-devel
 
-            # Enable cross architecture Chrooting
-            cp /usr/bin/qemu-aarch64-static $BUILDDIR/$ARCH/usr/bin/
+          # Enable cross architecture Chrooting
+          sudo cp /usr/bin/qemu-aarch64-static $BUILDDIR/$ARCH/usr/bin/
     
-            # fix SSL in the rootfs
-            rm -f $BUILDDIR/$ARCH/etc/ssl/certs/ca-certificates.crt
-            rm -f $BUILDDIR/$ARCH/etc/ca-certificates/extracted/tls-ca-bundle.pem
-            cp -a /etc/ssl/certs/ca-certificates.crt $BUILDDIR/$ARCH/etc/ssl/certs/
-            cp -a /etc/ca-certificates/extracted/tls-ca-bundle.pem $BUILDDIR/$ARCH/etc/ca-certificates/extracted/
+          # fix SSL in the rootfs
+          sudo rm -f $BUILDDIR/$ARCH/etc/ssl/certs/ca-certificates.crt
+          sudo rm -f $BUILDDIR/$ARCH/etc/ca-certificates/extracted/tls-ca-bundle.pem
+          sudo cp -a /etc/ssl/certs/ca-certificates.crt $BUILDDIR/$ARCH/etc/ssl/certs/
+          sudo cp -a /etc/ca-certificates/extracted/tls-ca-bundle.pem $BUILDDIR/$ARCH/etc/ca-certificates/extracted/
     
-            info "Setting up keyrings..."
-            $NSPAWN $BUILDDIR/$ARCH pacman-key --init 1> /dev/null 2>&1
-            $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm 1> /dev/null 2>&1
-            $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5 1> /dev/null 2>&1
-          }
-          
-          compress_docker () {
-            msg "Making Docker image..."
-            # make sure docker service is running
-            systemctl start docker
-            # create the docker image itself
-            tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | docker import - $DOCKER_IMAGE_NAME 1> /dev/null 2>&1
-            docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
-            docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
-            docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
-          }
-          sudo create_rootfs
-          sudo compress_docker
+          info "Setting up keyrings..."
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init 1> /dev/null 2>&1
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm 1> /dev/null 2>&1
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5 1> /dev/null 2>&1
+
+          msg "Making Docker image..."
+          # make sure docker service is running
+          sudo systemctl start docker
+          # create the docker image itself
+          sudo tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | docker import - $DOCKER_IMAGE_NAME 1> /dev/null 2>&1
+          sudo docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
+          sudo docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
+          sudo docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
