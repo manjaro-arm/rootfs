@@ -147,10 +147,7 @@ jobs:
           sudo cp /usr/bin/qemu-aarch64-static $BUILDDIR/$ARCH/usr/bin/
     
           # fix SSL in the rootfs
-          sudo rm -f $BUILDDIR/$ARCH/etc/ssl/certs/ca-certificates.crt
-          sudo rm -f $BUILDDIR/$ARCH/etc/ca-certificates/extracted/tls-ca-bundle.pem
-          sudo cp -a /etc/ssl/certs/ca-certificates.crt $BUILDDIR/$ARCH/etc/ssl/certs/
-          sudo cp -a /etc/ca-certificates/extracted/tls-ca-bundle.pem $BUILDDIR/$ARCH/etc/ca-certificates/extracted/
+          sudo $NSPAWN $BUILDDIR/$ARCH update-ca-trust
     
           info "Setting up keyrings..."
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init 1> /dev/null 2>&1
