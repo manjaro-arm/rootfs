@@ -133,17 +133,11 @@ jobs:
           source $LIBDIR/functions.sh
           
           msg "Creating rootfs..."
-    
-          # Remove old rootfs if it exists
-          if [ -d $BUILDDIR/$ARCH ]; then
-          echo "Removing old rootfs..."
-          sudo rm -rf $BUILDDIR/$ARCH
-          fi
 
           # cd to root_fs
           sudo mkdir -p $BUILDDIR/$ARCH
 
-          #pacstrap the rootfs filesystem
+          # Pacstrap the rootfs filesystem
           sudo $LIBDIR/pacstrap -G -c -C $LIBDIR/pacman.conf.$ARCH $BUILDDIR/$ARCH base-devel
 
           # Enable cross architecture Chrooting
@@ -156,31 +150,13 @@ jobs:
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5
-          
+          msg "Making Docker image..."
           # Create Dockerfile
           echo "FROM scratch" > ./Dockerfile
           echo "COPY $BUILDDIR/$ARCH/ /" >> ./Dockerfile
           echo 'CMD ["bash"]' >> ./Dockerfile
-      -
-        name: build-image
-        run: |
-          # Set globals
-          LIBDIR=/usr/share/manjaro-arm-tools/lib
-          ARCH="aarch64"
-          DOCKER_IMAGE_NAME="manjaro-$ARCH-base"
-
-          source $LIBDIR/functions.sh
           
-          msg "Making Docker image..."
-          # make sure docker service is running
-          #sudo systemctl unmask docker.service
-          #sudo systemctl unmask docker.socket
-          #sudo systemctl start docker.service
-          # create the docker image itself
-          #echo "FROM scratch\nADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > Dockerfile
-          
-          #sudo tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | sudo docker import - $DOCKER_IMAGE_NAME
-          docker build . -t $DOCKER_IMAGE_NAME:latest
-          docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
-          docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
-          docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
+          sudo docker build . -t $DOCKER_IMAGE_NAME:latest
+          sudo docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
+          sudo docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
+          sudo docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
