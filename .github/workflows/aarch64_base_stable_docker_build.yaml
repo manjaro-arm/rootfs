@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-container:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - 
         uses: styfle/cancel-workflow-action@0.9.0
@@ -36,11 +36,19 @@ jobs:
             qemu-utils \
             qemu-efi-aarch64 \
             qemu-system-arm \
-            qemu-user-static \
-            docker
+            qemu-user-static
           sudo pip3 install meson
           sudo pip3 install ninja
           
+          # Install proper docker
+          sudo apt install \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            software-properties-common
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+          sudo apt install docker-ce
       -
         name: install-pacman
         shell: bash
