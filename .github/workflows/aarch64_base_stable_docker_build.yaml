@@ -154,6 +154,13 @@ jobs:
       -
         name: build-image
         run: |
+          # Set globals
+          LIBDIR=/usr/share/manjaro-arm-tools/lib
+          ARCH="aarch64"
+          DOCKER_IMAGE_NAME="manjaro-$ARCH-base"
+
+          source $LIBDIR/functions.sh
+          
           msg "Making Docker image..."
           # make sure docker service is running
           #sudo systemctl unmask docker.service
