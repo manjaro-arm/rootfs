@@ -158,7 +158,7 @@ jobs:
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5
           
           # Create Dockerfile
-          echo "ADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > ./Dockerfile
+          echo "FROM scratch\nADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > ./Dockerfile
       -
         name: build-image
         run: |
@@ -175,7 +175,7 @@ jobs:
           #sudo systemctl unmask docker.socket
           #sudo systemctl start docker.service
           # create the docker image itself
-          #echo "ADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > Dockerfile
+          #echo "FROM scratch\nADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > Dockerfile
           
           #sudo tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | sudo docker import - $DOCKER_IMAGE_NAME
           docker build . -t $DOCKER_IMAGE_NAME:latest
