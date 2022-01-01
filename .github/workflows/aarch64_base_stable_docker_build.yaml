@@ -160,7 +160,9 @@ jobs:
           #sudo systemctl unmask docker.socket
           #sudo systemctl start docker.service
           # create the docker image itself
-          sudo tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | sudo docker import - $DOCKER_IMAGE_NAME
+          echo "ADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > Dockerfile
+          docker build . -t $DOCKER_IMAGE_NAME:latest
+          #sudo tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | sudo docker import - $DOCKER_IMAGE_NAME
           sudo docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
           sudo docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
           sudo docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
