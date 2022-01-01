@@ -156,7 +156,9 @@ jobs:
 
           msg "Making Docker image..."
           # make sure docker service is running
-          sudo systemctl start docker
+          sudo systemctl unmask docker.service
+          sudo systemctl unmask docker.socket
+          sudo systemctl start docker.service
           # create the docker image itself
           sudo tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | docker import - $DOCKER_IMAGE_NAME 1> /dev/null 2>&1
           sudo docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
