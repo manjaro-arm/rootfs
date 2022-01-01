@@ -6,17 +6,12 @@ on:
 
 jobs:
   build-container:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - 
         uses: styfle/cancel-workflow-action@0.9.0
         with:
           access_token: ${{ github.token }}
-      - 
-        id: time
-        uses: nanzm/get-time-action@v1.1
-        with:
-          format: 'YYYYMMDD'
       -  
         name: install-build-dependencies
         shell: bash
@@ -153,16 +148,22 @@ jobs:
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5
-
+          
+          # Create Dockerfile
+          echo "ADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > ./Dockerfile
+      -
+        name: build-image
+        run: |
           msg "Making Docker image..."
           # make sure docker service is running
           #sudo systemctl unmask docker.service
           #sudo systemctl unmask docker.socket
           #sudo systemctl start docker.service
           # create the docker image itself
-          echo "ADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > Dockerfile
-          docker build . -t $DOCKER_IMAGE_NAME:latest
+          #echo "ADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > Dockerfile
+          
           #sudo tar --numeric-owner --xattrs --acls -C $BUILDDIR/$ARCH -c . | sudo docker import - $DOCKER_IMAGE_NAME
-          sudo docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
-          sudo docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
-          sudo docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
+          docker build . -t $DOCKER_IMAGE_NAME:latest
+          docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
+          docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
+          docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
