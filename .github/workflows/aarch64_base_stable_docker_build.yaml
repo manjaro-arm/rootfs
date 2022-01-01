@@ -169,5 +169,5 @@ jobs:
             docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
             docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
           }
-          create_rootfs
-          compress_docker
+          sudo create_rootfs
+          sudo compress_docker
