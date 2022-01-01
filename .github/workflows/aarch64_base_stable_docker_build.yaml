@@ -158,7 +158,7 @@ jobs:
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5
           
           # Create Dockerfile
-          echo "FROM scratch\nADD $BUILDDIR/$ARCH /\nCMD \[\"bash\"\]" > ./Dockerfile
+          echo "FROM scratch" > ./Dockerfile
           echo "ADD $BUILDDIR/$ARCH" >> ./Dockerfile
           echo 'CMD ["bash"]' >> ./Dockerfile
       -
