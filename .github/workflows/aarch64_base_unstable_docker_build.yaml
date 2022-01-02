@@ -1,0 +1,163 @@
+name: aarch64_base_unstable_docker_build
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  '30 1 * * *'
+
+jobs:
+  build-container:
+    runs-on: ubuntu-20.04
+    steps:
+      - 
+        uses: styfle/cancel-workflow-action@0.9.0
+        with:
+          access_token: ${{ github.token }}
+      -  
+        name: install-build-dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt install \
+            gdisk \
+            zip \
+            systemd-container \
+            bmap-tools asciidoc \
+            libarchive-tools \
+            git \
+            build-essential \
+            cmake \
+            libarchive-dev \
+            pkg-config \
+            libcurl4-openssl-dev \
+            libgpgme-dev \
+            libssl-dev \
+            fakeroot \
+            dh-autoreconf \
+            qemu-utils \
+            qemu-efi-aarch64 \
+            qemu-system-arm \
+            qemu-user-static
+          sudo pip3 install meson
+          sudo pip3 install ninja
+          
+          # Install proper docker
+          sudo apt install \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            software-properties-common
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+          sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+          sudo apt install docker-ce
+      -
+        name: install-pacman
+        shell: bash
+        env:
+          PACMAN_VERSION: 6.0.1
+        run: |
+          sudo git clone --depth 1 https://gitlab.manjaro.org/packages/core/pacman.git
+          pushd pacman
+            sudo wget https://sources.archlinux.org/other/pacman/pacman-${PACMAN_VERSION}.tar.xz
+            sudo tar -xvf pacman-${PACMAN_VERSION}.tar.xz
+            pushd pacman-${PACMAN_VERSION}
+              sudo patch -p1 -i ../pacman-sync-first-option.patch
+              sudo meson --prefix=/usr \
+                        --buildtype=plain \
+                        -Ddoc=disabled \
+                        -Ddoxygen=enabled \
+                        -Dscriptlet-shell=/usr/bin/bash \
+                        -Dldconfig=/usr/bin/ldconfig \
+                        build
+              sudo meson compile -C build
+              sudo meson install -C build
+            popd
+            sudo install -m644 pacman.conf /etc/pacman.conf
+            sudo install -m644 makepkg.conf /etc/
+            sudo mkdir -p /etc/pacman.d
+            sudo touch /etc/pacman.d/mirrorlist
+          popd
+      -
+        name: setup-qemu-binfmt
+        shell: bash
+        run: |
+          sudo wget https://gitlab.manjaro.org/packages/community/manjaro-arm-qemu-static/-/raw/master/qemu-static.conf -O /usr/lib/binfmt.d/qemu-static.conf
+          sudo service systemd-binfmt restart
+          
+      - 
+        name: install-arch-install-scripts
+        shell: bash
+        env:
+          VERSION: 24
+        run: |
+          sudo wget https://github.com/archlinux/arch-install-scripts/archive/refs/tags/v${VERSION}.tar.gz -O arch-install-scripts.tar.gz
+          sudo tar -xvf arch-install-scripts.tar.gz
+          sudo make -C arch-install-scripts-${VERSION}
+          sudo make -C arch-install-scripts-${VERSION} check
+          sudo make -C arch-install-scripts-${VERSION} PREFIX=/usr install
+      -
+        name: install-manjaro-arm-tools
+        shell: bash
+        run: |
+          sudo git clone https://gitlab.manjaro.org/manjaro-arm/applications/manjaro-arm-tools.git
+          install_m_a_tools() {
+              pkgname=manjaro-arm-tools
+              sudo install -dm777 /usr/share/$pkgname/lib
+              sudo install -dm777 /usr/share/$pkgname/profiles
+              sudo install -d /etc/$pkgname/
+              sudo install -dm777 /var/lib/$pkgname/{pkg,img,tmp,profiles}
+              sudo install -dm777 /var/cache/$pkgname/{pkg/pkg-cache,img}
+              sudo install -Dm755 $pkgname/lib/* /usr/share/$pkgname/lib/
+              sudo install -Dm755 $pkgname/bin/* /usr/bin/
+              sudo install -Dm755 $pkgname/lib/manjaro-arm-tools.conf /etc/manjaro-arm-tools/
+          }
+          install_m_a_tools
+          
+          sudo sed -i -e 's|1>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh   
+          sudo sed -i -e 's|1> /dev/null 2>&1||g' /usr/share/manjaro-arm-tools/lib/functions.sh
+          sudo sed -i -e 's|2>/dev/null||g' /usr/share/manjaro-arm-tools/lib/functions.sh 
+      -
+        name: build
+        shell: bash
+        run: |
+          # Set globals
+          LIBDIR=/usr/share/manjaro-arm-tools/lib
+          ARCH="aarch64"
+          DOCKER_IMAGE_NAME="manjaro-$ARCH-base"
+
+          source $LIBDIR/functions.sh
+          
+          msg "Creating rootfs..."
+
+          # cd to root_fs
+          sudo mkdir -p $BUILDDIR/$ARCH
+
+          # Switch branch
+          BRANCH="unstable"
+          info "Switching branch to $BRANCH..."
+          sed -i s/"arm-stable"/"arm-$BRANCH"/g $LIBDIR/pacman.conf.$ARCH
+
+          # Pacstrap the rootfs filesystem
+          sudo $LIBDIR/pacstrap -G -c -C $LIBDIR/pacman.conf.$ARCH $BUILDDIR/$ARCH base-devel
+
+          # Enable cross architecture Chrooting
+          sudo cp /usr/bin/qemu-aarch64-static $BUILDDIR/$ARCH/usr/bin/
+    
+          # fix SSL in the rootfs
+          sudo $NSPAWN $BUILDDIR/$ARCH update-ca-trust
+    
+          info "Setting up keyrings..."
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5
+          
+          msg "Making Docker image..."
+          # Create Dockerfile
+          echo "FROM scratch" > $BUILDDIR/Dockerfile
+          echo "COPY $ARCH/ /" >> $BUILDDIR/Dockerfile
+          echo 'CMD ["bash"]' >> $BUILDDIR/Dockerfile
+          
+          # Build and push new image
+          sudo docker build -t $DOCKER_IMAGE_NAME:dev $BUILDDIR/
+          sudo docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
+          sudo docker image tag $DOCKER_IMAGE_NAME:dev manjaroarm/$DOCKER_IMAGE_NAME:dev
+          sudo docker push manjaroarm/$DOCKER_IMAGE_NAME:dev
