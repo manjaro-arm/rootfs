@@ -152,11 +152,11 @@ jobs:
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5
           msg "Making Docker image..."
           # Create Dockerfile
-          echo "FROM scratch" > ./Dockerfile
-          echo "COPY $BUILDDIR/$ARCH/ /" >> ./Dockerfile
-          echo 'CMD ["bash"]' >> ./Dockerfile
+          echo "FROM scratch" > $BUILDDIR/Dockerfile
+          echo "COPY $ARCH/ /" >> $BUILDDIR/Dockerfile
+          echo 'CMD ["bash"]' >> $BUILDDIR/Dockerfile
           
-          sudo docker build . -t $DOCKER_IMAGE_NAME:latest
+          sudo docker build -t $DOCKER_IMAGE_NAME:latest $BUILDDIR/
           sudo docker login -u=${{ secrets.DOCKER_USERNAME }} -p=${{ secrets.DOCKER_PASSWORD }}
           sudo docker image tag $DOCKER_IMAGE_NAME:latest manjaroarm/$DOCKER_IMAGE_NAME:latest
           sudo docker push manjaroarm/$DOCKER_IMAGE_NAME:latest
