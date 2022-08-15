@@ -58,6 +58,9 @@ runs:
       name: install-build-dependencies
       shell: bash
       run: |
+        df -h
+        sudo apt clean
+        df -h
         sudo apt-get update
         sudo apt install \
           gdisk \
