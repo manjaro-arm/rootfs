@@ -86,9 +86,6 @@ runs:
           u-boot-tools
         sudo pip3 install meson
         sudo pip3 install ninja
-        df -h
-        sudo apt clean
-        df -h
           
     - id: install-pacman
       shell: bash
