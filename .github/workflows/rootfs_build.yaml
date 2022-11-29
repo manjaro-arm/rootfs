@@ -4,41 +4,14 @@ on:
   schedule:
     - cron:  '30 1 * * 1'
 
-jobs:
-  prepare_release:
-    runs-on: ubuntu-latest
-    steps:
-      - 
-        uses: styfle/cancel-workflow-action@0.9.0
-        with:
-          access_token: ${{ github.token }}
-      - 
-        id: time
-        uses: boredland/get-time-action@2.0.0
-        with:
-          format: 'YYYYMMDD'
-      - 
-        id: release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.time.outputs.time }}
-          release_name: ${{ steps.time.outputs.time }}
-          draft: false
-          prerelease: false
-    outputs:
-      upload_url: ${{ steps.release.outputs.upload_url }}
-      release_id: ${{ steps.release.outputs.id }}
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
   release:
     runs-on: ubuntu-22.04
-    needs: prepare_release
     steps:
-      - 
-        uses: styfle/cancel-workflow-action@0.9.0
-        with:
-          access_token: ${{ github.token }}
       - 
         id: time
         uses: boredland/get-time-action@2.0.0
@@ -110,7 +83,7 @@ jobs:
         name: install-arch-install-scripts
         shell: bash
         env:
-          VERSION: 24
+          VERSION: 28
         run: |
           sudo wget https://github.com/archlinux/arch-install-scripts/archive/refs/tags/v${VERSION}.tar.gz -O arch-install-scripts.tar.gz
           sudo tar -xvf arch-install-scripts.tar.gz
@@ -150,21 +123,15 @@ jobs:
           cp -v $FILE_PATH .
 
           echo "FILE_PATH=$(basename $FILE_PATH)" >> $GITHUB_ENV
-      - 
-        id: upload_release 
-        uses: actions/upload-release-asset@v1
+      -
+        name: Release assets
+        uses: softprops/action-gh-release@v0.1.15
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./${{ env.FILE_PATH }}
-          asset_name: ${{ env.FILE_PATH }}
-          asset_content_type: application/gzip
-      - 
-        name: rollback_release
-        if: failure()
-        uses: author/action-rollback@stable
-        with:
-          release_id: ${{ needs.prepare_release.outputs.release_id }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ steps.time.outputs.time }}
+          name: ${{ steps.time.outputs.time }}
+          draft: false
+          prerelease: false
+          files: |
+            ${{ env.FILE_PATH }}
