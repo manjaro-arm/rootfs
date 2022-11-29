@@ -94,7 +94,7 @@ runs:
     - id: install-pacman
       shell: bash
       env:
-        PACMAN_VERSION: 6.0.1
+        PACMAN_VERSION: 6.0.2
       run: |
         sudo git clone --depth 1 https://gitlab.manjaro.org/packages/core/pacman.git
         pushd pacman
@@ -188,12 +188,12 @@ runs:
           
         FILE_PATH=$(find /var/cache/manjaro-arm-tools/img -type f -name "*.img.xz" -exec stat -c '%Y %n' {} \; | sort -nr | awk 'NR==1 {print $2}')
         cp -v $FILE_PATH .
-        echo "::set-output name=file-path::$(basename $FILE_PATH)"
+        echo "file-path=$(basename $FILE_PATH)" >> $GITHUB_OUTPUT
           
         sha1sum $(basename $FILE_PATH) > $(basename $FILE_PATH).sha1
-        echo "::set-output name=file-sha1::$(basename $FILE_PATH).sha1"
+        echo "file-sha1=$(basename $FILE_PATH).sha1" >> $GITHUB_OUTPUT
         mktorrent -v -a udp://tracker.opentrackr.org:1337 -l 21 -w https://github.com/$GITHUB_REPOSITORY/releases/download/$VERSION/$(basename $FILE_PATH) -o $(basename $FILE_PATH).torrent $(basename $FILE_PATH)
-        echo "::set-output name=file-torrent::$(basename $FILE_PATH).torrent"
+        echo "file-torrent=$(basename $FILE_PATH).torrent" >> $GITHUB_OUTPUT
         
         # Do GPG signing
         #echo "setup values"
@@ -223,7 +223,7 @@ runs:
           
         #echo "Verifying file"
         #$GPG --verify $(basename $FILE_PATH).sig $(basename $FILE_PATH)
-        #echo "::set-output name=file-signature::$(basename $FILE_PATH).sig"
+        #echo "file-signature=$(basename $FILE_PATH).sig" >> $GITHUB_OUTPUT
           
         #echo "cleaning up"
         #find "$GPG_HOMEDIR" -type f -exec shred {} \;
@@ -238,7 +238,7 @@ runs:
           
         FILE_PKG=$(find /var/cache/manjaro-arm-tools/img -type f -name "*-pkgs.txt" -exec stat -c '%Y %n' {} \; | sort -nr | awk 'NR==1 {print $2}')
         cp -v $FILE_PKG .
-        echo "::set-output name=file-pkg::$(basename $FILE_PKG)"
+        echo "file-pkg=$(basename $FILE_PKG)" >> $GITHUB_OUTPUT
         echo "FILE_PKG=$(basename $FILE_PKG)" >> $GITHUB_ENV
 
 #    -
