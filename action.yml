@@ -42,9 +42,9 @@ outputs:
   file-path:
     description: "path of the generated image"
     value: ${{ steps.build.outputs.file-path }}
-  file-sha1:
+  file-sha256:
     description: "checksum file for the image"
-    value: ${{ steps.build.outputs.file-sha1 }}
+    value: ${{ steps.build.outputs.file-sha256 }}
   file-torrent:
     description: "torrent file for the image"
     value: ${{ steps.build.outputs.file-torrent }}
@@ -190,8 +190,8 @@ runs:
         cp -v $FILE_PATH .
         echo "file-path=$(basename $FILE_PATH)" >> $GITHUB_OUTPUT
           
-        sha1sum $(basename $FILE_PATH) > $(basename $FILE_PATH).sha1
-        echo "file-sha1=$(basename $FILE_PATH).sha1" >> $GITHUB_OUTPUT
+        sha256sum $(basename $FILE_PATH) > $(basename $FILE_PATH).sha256
+        echo "file-sha256=$(basename $FILE_PATH).sha256" >> $GITHUB_OUTPUT
         mktorrent -v -a udp://tracker.opentrackr.org:1337 -l 21 -w https://github.com/$GITHUB_REPOSITORY/releases/download/$VERSION/$(basename $FILE_PATH) -o $(basename $FILE_PATH).torrent $(basename $FILE_PATH)
         echo "file-torrent=$(basename $FILE_PATH).torrent" >> $GITHUB_OUTPUT
         
@@ -232,7 +232,7 @@ runs:
           
         # Copy filepaths
         echo "FILE_PATH=$(basename $FILE_PATH)" >> $GITHUB_ENV
-        echo "FILE_SHA1=$(basename $FILE_PATH).sha1" >> $GITHUB_ENV
+        echo "FILE_sha256=$(basename $FILE_PATH).sha256" >> $GITHUB_ENV
         echo "FILE_TORRENT=$(basename $FILE_PATH).torrent" >> $GITHUB_ENV
         #echo "FILE_SIG=$(basename $FILE_PATH).sig" >> $GITHUB_ENV
           
