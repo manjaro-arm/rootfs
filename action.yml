@@ -88,8 +88,8 @@ runs:
         sudo pip3 install ninja
         
         # For generic-efi support
-        wget http://ports.ubuntu.com/pool/main/g/grub2-unsigned/grub-efi-arm64-bin_2.06-2ubuntu10_arm64.deb
-        sudo dpkg -x grub-efi-arm64-bin_2.06-2ubuntu10_arm64.deb /
+        wget http://ports.ubuntu.com/pool/main/g/grub2-unsigned/grub-efi-arm64-bin_2.06-2ubuntu17_arm64.deb
+        sudo dpkg -x grub-efi-arm64-bin_2.06-2ubuntu17_arm64.deb /
           
     - id: install-pacman
       shell: bash
