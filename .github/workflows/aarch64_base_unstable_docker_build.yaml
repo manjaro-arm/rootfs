@@ -147,7 +147,7 @@ jobs:
           info "Setting up keyrings..."
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm
-          sudo sed -i s/"arm-stable"/"arm-$BRANCH"/g /etc/pacman-mirrors.conf #Only for testing purpose.
+          sudo $NSPAWN $BUILDDIR/$ARCH sed -i s/"stable"/"arm-$BRANCH"/g $BUILDDIR/$ARCH/etc/pacman-mirrors.conf #Only for testing purpose.
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5
           
           msg "Making Docker image..."
