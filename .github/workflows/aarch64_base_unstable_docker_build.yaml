@@ -146,9 +146,9 @@ jobs:
     
           
           #Only for testing purpose.
-          info "Sed branch"
-          sudo $NSPAWN $BUILDDIR/$ARCH sed -i s/"stable"/"arm-$BRANCH"/g /etc/pacman-mirrors.conf 
-          info "End of Sed branch"
+          #info "Sed branch"
+          #sudo $NSPAWN $BUILDDIR/$ARCH sed -i s/"stable"/"arm-$BRANCH"/g /etc/pacman-mirrors.conf 
+          #info "End of Sed branch"
 
           info "Setting up keyrings..."
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init
