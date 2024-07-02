@@ -153,6 +153,7 @@ jobs:
           info "Setting up keyrings..."
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --init
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-key --populate archlinuxarm manjaro manjaro-arm
+          sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors --api --set-branch arm-unstable
           sudo $NSPAWN $BUILDDIR/$ARCH pacman-mirrors -f5
           
           msg "Making Docker image..."
