@@ -75,7 +75,7 @@ jobs:
         name: setup-qemu-binfmt
         shell: bash
         run: |
-          sudo wget https://gitlab.manjaro.org/packages/community/manjaro-arm-qemu-static/-/raw/master/qemu-static.conf -O /usr/lib/binfmt.d/qemu-static.conf
+          sudo wget https://gitlab.manjaro.org/manjaro-arm/packages/manjaro-arm-qemu-static/-/raw/master/qemu-static.conf -O /usr/lib/binfmt.d/qemu-static.conf
           sudo service systemd-binfmt restart
           
       - 
